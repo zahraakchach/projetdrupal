@@ -1,0 +1,226 @@
+<?php
+
+/**
+ * @file
+ * The primary PHP file for the dempo theme.
+ */
+
+use Drupal\block\Entity\Block;
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_preprocess_HOOK() for page.html.twig.
+ */
+function dempo_preprocess_page(&$variables) {
+  $node = \Drupal::routeMatch()->getParameter('node');
+  $variables['design_nid']  = is_null($node) ? null : $node->id();
+  $variables['design_home'] = is_null($node) ? null : 'homepage-' . str_replace('/', '', $node->toUrl()->toString());
+  
+  $node_front = \Drupal::configFactory()->get('system.site')->get('page.front');
+  $path_alias = \Drupal::service('path_alias.manager')->getAliasByPath($node_front);
+  $variables['design_front'] = is_null($node_front) ? null: 'homepage-' . str_replace('/', '', $path_alias);
+  
+  // dump($variables['design_front']);
+  
+  $variables['header_top_fluid'] = theme_get_setting('header_top_fluid');
+  $variables['header_top_fluid_class'] = $variables['header_top_fluid'] ? 'container-fluid' : 'container';
+
+  $variables['header_fluid'] = theme_get_setting('header_fluid');
+  $variables['header_fluid_class'] = $variables['header_fluid'] ? 'container-fluid' : 'container';
+
+  $variables['header_bot_fluid'] = theme_get_setting('header_bot_fluid');
+  $variables['header_bot_fluid_class'] = $variables['header_bot_fluid'] ? 'container-fluid' : 'container';
+
+  $variables['footer_top_fluid'] = theme_get_setting('footer_top_fluid');
+  $variables['footer_top_fluid_class'] = $variables['footer_top_fluid'] ? 'container-fluid' : 'container';
+
+  $variables['footer_fluid'] = theme_get_setting('footer_fluid');
+  $variables['footer_fluid_class'] = $variables['footer_fluid'] ? 'container-fluid' : 'container';
+
+  $variables['footer_bot_fluid'] = theme_get_setting('footer_bot_fluid');
+  $variables['footer_bot_fluid_class'] = $variables['footer_bot_fluid'] ? 'container-fluid' : 'container';
+  
+  
+  $variables['coba_saja'] = 'This is my Coba var';
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function dempo_preprocess_block(&$variables) {
+  $variables['navbar_class'] = theme_get_setting('navbar_class');
+  // '/' . \Drupal::config('dempo.settings')->get('logo.path');
+  // file_url_transform_relative(file_create_url(theme_get_setting('logo.url')));
+  $variables['site_logo'] = \Drupal::service('file_url_generator')->generateString(theme_get_setting('logo.url'));
+
+  // \Drupal\block\Entity\Block::load('dempo_search')->getPlugin()->build();
+  $load_block = Block::load('dempo_search');
+  if ($load_block) {
+    $block = $load_block->getPlugin()->build();
+    $variables['dempo_search'] = $block;
+  }
+}
+
+/**
+ * Implements hook_form_system_theme_settings_alter().
+ */
+function dempo_form_system_theme_settings_alter(&$form, FormStateInterface $form_state) {
+  // Lock Fluid container option in the General Bootstrap theme settings.
+  $form['general']['container']['fluid_container']['#default_value'] = 1;
+  $form['general']['container']['fluid_container']['#disabled'] = FALSE;
+  $form['general']['container']['fluid_container']['#description'] = t('Dempo theme works with container and container-fluid.');
+
+  // Theme Settings.
+  $form['dempo_settings'] = [
+    '#type' => 'vertical_tabs',
+    '#title' => t('Dempo Settings'),
+  ];
+
+  //  :root {
+  //    --bgcolor: #fc3c68;
+  //    --color: #eee;
+  //  }
+  
+  $form['basic'] = [
+    '#type' => 'details',
+    '#title' => t('Basic'),
+    '#group' => 'dempo_settings',
+  ];
+  
+  $form['basic']['basic_fgcolor'] = [
+    '#type' => 'textfield',
+    '#title' => t('Base Foreground Color'),
+    '#default_value' => theme_get_setting('basic_fgcolor'),
+    '#description' => t('Basic Foreground Color: #eeeeee'),
+  ];
+  
+  $form['basic']['basic_bgcolor'] = [
+    '#type' => 'textfield',
+    '#title' => t('Base Background Color'),
+    '#default_value' => theme_get_setting('basic_bgcolor'),
+    '#description' => t('Basic Background Color: #fc3c68'),
+  ];
+  
+  // Navigation.
+  $form['navbar'] = [
+    '#type' => 'details',
+    '#title' => t('Navbar'),
+    '#group' => 'dempo_settings',
+  ];
+
+  $form['navbar']['navbar_class'] = [
+    '#type' => 'textfield',
+    '#title' => t('Navbar Class'),
+    '#default_value' => theme_get_setting('navbar_class'),
+    '#description' => t('Navbar Class: navbar-expand-lg bg-light'),
+  ];
+
+  $form['header'] = [
+    '#type' => 'details',
+    '#title' => t('Header'),
+    '#group' => 'dempo_settings',
+  ];
+  
+  $form['header']['header_top_fluid'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Use fluid mode for Header Top'),
+    '#default_value' => theme_get_setting('header_top_fluid'),
+    '#description' => t('Select Header mode to fluid or boxed'),
+  ];
+
+  $form['header']['header_fluid'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Use fluid mode for Header'),
+    '#default_value' => theme_get_setting('header_fluid'),
+    '#description' => t('Select Header mode to fluid or boxed'),
+  ];
+
+  $form['header']['header_bot_fluid'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Use fluid mode for Header Bottom'),
+    '#default_value' => theme_get_setting('header_bot_fluid'),
+    '#description' => t('Select Header mode to fluid or boxed'),
+  ];
+
+  $form['footer'] = [
+    '#type' => 'details',
+    '#title' => t('Footer'),
+    '#group' => 'dempo_settings',
+  ];
+
+  $form['footer']['footer_top_fluid'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Use fluid mode for Footer Top'),
+    '#default_value' => theme_get_setting('footer_top_fluid'),
+    '#description' => t('Select Footer mode to fluid or boxed'),
+  ];
+
+  $form['footer']['footer_fluid'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Use fluid mode for Footer'),
+    '#default_value' => theme_get_setting('footer_fluid'),
+    '#description' => t('Select Footer mode to fluid or boxed'),
+  ];
+
+  $form['footer']['footer_bot_fluid'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Use fluid mode for Footer Bottom'),
+    '#default_value' => theme_get_setting('footer_bot_fluid'),
+    '#description' => t('Select Footer mode to fluid or boxed'),
+  ];
+
+  $form['custom_css'] = [
+    '#type' => 'details',
+    '#title' => t('Custom CSS'),
+    '#group' => 'dempo_settings',
+  ];
+
+  $form['custom_css']['custom_css_value'] = [
+    '#type' => 'textarea',
+    '#title' => t('Custom CSS'),
+    '#default_value' => theme_get_setting('custom_css_value'),
+    '#description' => t('Enter custom CSS.'),
+    '#attributes' => ['class' => ['code_css']],
+  ];
+}
+
+/**
+ * Implements hook_preprocess_HOOK() for HTML document templates.
+ *
+ * Adds body classes if certain regions have content.
+ */
+function dempo_preprocess_html(&$variables) {
+  // hanya berlaku jika content type = homepage
+  $node = \Drupal::routeMatch()->getParameter('node');
+  $variables['design_nid']  = is_null($node) ? null : $node->id();
+  $variables['design_home'] = is_null($node) ? null : 'homepage-' . str_replace('/', '', $node->toUrl()->toString());
+  
+  $node_front = \Drupal::configFactory()->get('system.site')->get('page.front');
+  $path_alias = \Drupal::service('path_alias.manager')->getAliasByPath($node_front);
+  $variables['design_front'] = is_null($node_front) ? null : 'homepage-' . str_replace('/', '', $path_alias);
+  
+  $basic_fgcolor = theme_get_setting('basic_fgcolor');
+  $basic_bgcolor = theme_get_setting('basic_bgcolor');
+  
+  if (empty($basic_fgcolor)) { $basic_fgcolor = '#eeeeee'; }
+  $variables['basic_fgcolor'] = ':root {   --color: ' . $basic_fgcolor . ' !important; }';
+  
+  if (empty($basic_bgcolor)) { $basic_bgcolor = '#fc3c68'; }
+  $variables['basic_bgcolor'] = ':root { --bgcolor: ' . $basic_bgcolor . ' !important; }';
+  
+  
+  if (theme_get_setting('custom_css_value')) {
+    $custom_style = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', theme_get_setting('custom_css_value'));
+    $custom_style = str_replace(["\r\n", "\r", "\n", "\t", '  ', '   ', '    '], '', $custom_style);
+    $variables['custom_css_value'] = $custom_style;
+  }
+}
+
+/**
+ * Implements hook_preprocess().
+ */
+function dempo_preprocess(&$variables) {
+
+  $variables['dempo_test_var'] = 'This is my var';
+
+}

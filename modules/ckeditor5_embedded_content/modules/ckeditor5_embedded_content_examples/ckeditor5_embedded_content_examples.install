@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Updatehooks for embedded_content_examples.
+ */
+
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+
+/**
+ * Uninstall this module and replace with the embedded_content_examples module.
+ */
+function ckeditor5_embedded_content_examples_update_92001() {
+  /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
+  $module_installer = \Drupal::service('module_installer');
+  try {
+    $module_installer->install(['embedded_content_examples']);
+  }
+  catch (Exception $e) {
+    throw new Exception(
+      'Failed to install the Embedded Content Examples module. Please download the module or run `composer require drupal/embedded_content_examples`.'
+    );
+  }
+  $module_installer->uninstall(['ckeditor5_embedded_content_examples']);
+
+  return new TranslatableMarkup('Uninstalled ckeditor5_embedded_content_examples and replaced with embedded_content_examples.');
+}

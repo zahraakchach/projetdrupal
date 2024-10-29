@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ * Updatehooks for embedded_content_examples.
+ */
+
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\editor\Entity\Editor;
+use Drupal\filter\Entity\FilterFormat;
+use Drupal\user\Entity\Role;
+
+/**
+ * Uninstall this module and replace with the embedded_content module.
+ */
+function ckeditor5_embedded_content_update_92001() {
+  /** @var \Drupal\Core\Extension\ModuleInstaller $module_installer */
+  $module_installer = \Drupal::service('module_installer');
+  try {
+    $module_installer->install(['embedded_content']);
+  }
+  catch (Exception $e) {
+    throw new Exception(
+      'Failed to install the Embedded Content module. Please download the module or run `composer require drupal/embedded_content`.'
+      );
+  }
+
+  $editors = Editor::loadMultiple();
+  foreach ($editors as $editor) {
+    $update = FALSE;
+    $settings = $editor->getSettings();
+    foreach (($settings['toolbar']['items'] ?? []) as $delta => $item) {
+      if ($item == 'embeddedContent') {
+        $update = TRUE;
+        $settings['toolbar']['items'][$delta] = 'embeddedContent__default';
+      }
+    }
+    if ($update) {
+      $editor->setSettings($settings);
+      $editor->save();
+    }
+  }
+
+  $filter_formats = FilterFormat::loadMultiple();
+  foreach ($filter_formats as $filter_format) {
+    $update = FALSE;
+    $dependencies = $filter_format->getDependencies();
+    foreach (($dependencies['module'] ?? []) as $delta => $module) {
+      if ($module == 'ckeditor5_embedded_content') {
+        $update = TRUE;
+        $dependencies['module'][$delta] = 'embedded_content';
+      }
+    }
+    $filter_format->set('dependencies', $dependencies);
+    $filters = $filter_format->get('filters');
+    foreach ($filters as $delta => $filter) {
+      if ($delta === 'ckeditor5_embedded_content') {
+        $update = TRUE;
+        unset($filters[$delta]);
+        $filter['id'] = 'embedded_content';
+        $filter['provider'] = 'embedded_content';
+        $filters['embedded_content'] = $filter;
+      }
+    }
+    if ($update) {
+      $filter_format->set('filters', $filters);
+      $filter_format->save();
+    }
+  }
+
+  $roles = Role::loadMultiple();
+
+  foreach($roles as $role){
+    if($role->hasPermission('use ckeditor5 embedded content')){
+      $role->revokePermission('use ckeditor5 embedded content');
+      $role->grantPermission('use default embedded content button');
+      $role->save();
+    }
+  }
+
+  $module_installer->uninstall(['ckeditor5_embedded_content']);
+  return new TranslatableMarkup('Uninstalled ckeditor5_embedded_content and replaced with embedded_content. All corresponding configuration has been updated. You can now remove this module.');
+}

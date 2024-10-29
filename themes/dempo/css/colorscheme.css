@@ -1,0 +1,7 @@
+/* Color Scheme */
+
+:root {
+  --bgcolor: #fc3c68;
+  --color: #eee;
+  --bs-border-radius: 0;
+}
